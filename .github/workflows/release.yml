@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to tag, e.g. 0.0.25 (no leading v)"
+        required: true
+      zip_url:
+        description: "Public URL of the uploaded PulpoModule.xcframework.zip"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Only release from the default branch; otherwise the push below would carry other branches' commits into it.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Validate version
+        env:
+          VERSION: ${{ inputs.version }}
+          ZIP_URL: ${{ inputs.zip_url }}
+        run: |
+          [[ "$ZIP_URL" == https://assets.pulpoar.com/vision/pulpo-module/builds/* ]] || { echo "zip_url must be under https://assets.pulpoar.com/vision/pulpo-module/builds/"; exit 1; }
+          [[ "$ZIP_URL" != *[\&#\"]* ]] || { echo "zip_url contains unsupported characters"; exit 1; }
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version must look like 1.2.3"; exit 1; }
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "tag $VERSION already exists"; exit 1
+          fi
+
+      - name: Download and validate zip
+        env:
+          ZIP_URL: ${{ inputs.zip_url }}
+        run: |
+          curl -fsSL "$ZIP_URL" -o PulpoModule.xcframework.zip
+          if unzip -l PulpoModule.xcframework.zip | grep -qiE "dSYM|__MACOSX|\.DS_Store"; then
+            echo "zip contains dSYMs or macOS metadata"; exit 1
+          fi
+          unzip -q PulpoModule.xcframework.zip -d unzipped
+          [ -d unzipped/PulpoModule.xcframework ] || { echo "PulpoModule.xcframework must be the zip's top-level entry"; exit 1; }
+          if plutil -p unzipped/PulpoModule.xcframework/Info.plist | grep -q DebugSymbolsPath; then
+            echo "Info.plist still has DebugSymbolsPath"; exit 1
+          fi
+          # Every slice must contain a binary with the expected architecture and a deployment target we declare in Package.swift
+          check_slice() {
+            local dir="$1" arch="$2" bin
+            bin=$(ls "unzipped/PulpoModule.xcframework/$dir"/PulpoModule.framework/PulpoModule 2>/dev/null || true)
+            [ -n "$bin" ] || { echo "missing binary in slice $dir"; exit 1; }
+            lipo -info "$bin" | grep -qw "$arch" || { echo "slice $dir lacks $arch"; lipo -info "$bin"; exit 1; }
+            local minos
+            minos=$(vtool -show-build "$bin" | awk '/minos/ {print $2; exit}')
+            echo "$dir: $arch, minos $minos"
+            [ -n "$minos" ] && [ "$(printf '%s\n18.4\n' "$minos" | sort -V | tail -1)" = "18.4" ] || { echo "slice $dir minos $minos exceeds 18.4"; exit 1; }
+          }
+          check_slice ios-arm64 arm64
+          check_slice ios-x86_64-simulator x86_64
+
+      - name: Update Package.swift
+        env:
+          ZIP_URL: ${{ inputs.zip_url }}
+        run: |
+          CHECKSUM=$(swift package compute-checksum PulpoModule.xcframework.zip)
+          sed -i '' -E "s#url: \".*\"#url: \"$ZIP_URL\"#; s#checksum: \".*\"#checksum: \"$CHECKSUM\"#" Package.swift
+          swift package dump-package > /dev/null
+          git diff --stat Package.swift
+          grep -E "url:|checksum:" Package.swift
+
+      - name: Verify package resolves
+        run: |
+          # Downloads the binary from the URL and checks it against the checksum, exactly as a partner's SwiftPM would
+          rm -rf .build
+          swift package resolve
+          swift package describe > /dev/null
+
+      - name: Commit, tag, release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "release: $VERSION"
+          git tag "$VERSION"
+          # Atomic: either both the commit and the tag land, or neither does
+          git push --atomic origin "HEAD:refs/heads/$DEFAULT_BRANCH" "refs/tags/$VERSION"
+          gh release create "$VERSION" --title "$VERSION" --notes "PulpoModule xcframework $VERSION"
