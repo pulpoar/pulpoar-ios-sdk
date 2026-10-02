@@ -39,3 +39,11 @@ Xcode: File → Packages → Update to Latest Package Versions (or `swift packag
    ```
 3. Upload to the `vision` blob container under a **new, never reused** path: `pulpo-module/builds/NativePulpoModule_v<version>/ios/PulpoModule.xcframework.zip`. The CDN caches for 30 days, so overwriting a path serves stale files.
 4. Run the **Release** workflow (Actions → Release → Run workflow) with the version and the zip URL. It validates the zip, updates `Package.swift`, commits, tags `<version>`, and creates a GitHub release.
+
+## License
+
+Proprietary. See [LICENSE](LICENSE). Use requires an agreement with PulpoAR.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
