@@ -23,7 +23,7 @@ jobs:
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Validate version
         env:
@@ -50,6 +50,19 @@ jobs:
           if plutil -p unzipped/PulpoModule.xcframework/Info.plist | grep -q DebugSymbolsPath; then
             echo "Info.plist still has DebugSymbolsPath"; exit 1
           fi
+          # Every slice must contain a binary with the expected architecture and a deployment target we declare in Package.swift
+          check_slice() {
+            local dir="$1" arch="$2" bin
+            bin=$(ls "unzipped/PulpoModule.xcframework/$dir"/PulpoModule.framework/PulpoModule 2>/dev/null || true)
+            [ -n "$bin" ] || { echo "missing binary in slice $dir"; exit 1; }
+            lipo -info "$bin" | grep -qw "$arch" || { echo "slice $dir lacks $arch"; lipo -info "$bin"; exit 1; }
+            local minos
+            minos=$(vtool -show-build "$bin" | awk '/minos/ {print $2; exit}')
+            echo "$dir: $arch, minos $minos"
+            [ -n "$minos" ] && [ "$(printf '%s\n18.4\n' "$minos" | sort -V | tail -1)" = "18.4" ] || { echo "slice $dir minos $minos exceeds 18.4"; exit 1; }
+          }
+          check_slice ios-arm64 arm64
+          check_slice ios-x86_64-simulator x86_64
 
       - name: Update Package.swift
         env:
@@ -58,7 +71,15 @@ jobs:
           CHECKSUM=$(swift package compute-checksum PulpoModule.xcframework.zip)
           sed -i '' -E "s#url: \".*\"#url: \"$ZIP_URL\"#; s#checksum: \".*\"#checksum: \"$CHECKSUM\"#" Package.swift
           swift package dump-package > /dev/null
+          git diff --stat Package.swift
           grep -E "url:|checksum:" Package.swift
+
+      - name: Verify package resolves
+        run: |
+          # Downloads the binary from the URL and checks it against the checksum, exactly as a partner's SwiftPM would
+          rm -rf .build
+          swift package resolve
+          swift package describe > /dev/null
 
       - name: Commit, tag, release
         env:
@@ -70,5 +91,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "release: $VERSION"
           git tag "$VERSION"
-          git push origin "HEAD:$DEFAULT_BRANCH" "$VERSION"
+          # Atomic: either both the commit and the tag land, or neither does
+          git push --atomic origin "HEAD:refs/heads/$DEFAULT_BRANCH" "refs/tags/$VERSION"
           gh release create "$VERSION" --title "$VERSION" --notes "PulpoModule xcframework $VERSION"
