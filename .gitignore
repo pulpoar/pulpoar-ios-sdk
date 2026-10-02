@@ -2,3 +2,5 @@
 .build/
 .swiftpm/
 *.xcodeproj/xcuserdata/
+PulpoModule.xcframework.zip
+unzipped/
