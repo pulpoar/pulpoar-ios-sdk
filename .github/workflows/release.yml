@@ -50,29 +50,13 @@ jobs:
           MODULE: ${{ inputs.module }}
           ZIP_URL: ${{ inputs.zip_url }}
         run: |
-          curl -fsSL "$ZIP_URL" -o "$MODULE".xcframework.zip
+          curl -fsSL --retry 3 --max-time 300 "$ZIP_URL" -o "$MODULE".xcframework.zip
           if unzip -l "$MODULE".xcframework.zip | grep -qiE "dSYM|__MACOSX|\.DS_Store"; then
             echo "zip contains dSYMs or macOS metadata"; exit 1
           fi
           unzip -q "$MODULE".xcframework.zip -d unzipped
           [ -d unzipped/"$MODULE".xcframework ] || { echo "$MODULE.xcframework must be the zip's top-level entry"; exit 1; }
-          if plutil -p unzipped/"$MODULE".xcframework/Info.plist | grep -q DebugSymbolsPath; then
-            echo "Info.plist still has DebugSymbolsPath"; exit 1
-          fi
-          # Every slice must contain a binary with the expected architecture and a deployment target we declare in Package.swift
-          check_slice() {
-            local dir="$1" arch="$2" bin
-            bin="unzipped/$MODULE.xcframework/$dir/$MODULE.framework/$MODULE"
-            [ -f "$bin" ] || bin=""
-            [ -n "$bin" ] || { echo "missing binary in slice $dir"; exit 1; }
-            lipo -info "$bin" | grep -qw "$arch" || { echo "slice $dir lacks $arch"; lipo -info "$bin"; exit 1; }
-            local minos
-            minos=$(vtool -show-build "$bin" | awk '/minos/ {print $2; exit}')
-            echo "$dir: $arch, minos $minos"
-            [ -n "$minos" ] && [ "$(printf '%s\n18.4\n' "$minos" | sort -V | tail -1)" = "18.4" ] || { echo "slice $dir minos $minos exceeds 18.4"; exit 1; }
-          }
-          check_slice ios-arm64 arm64
-          check_slice ios-x86_64-simulator x86_64
+          python3 scripts/check_xcframework.py unzipped/"$MODULE".xcframework "$MODULE"
 
       - name: Update Package.swift
         env:
@@ -106,4 +90,6 @@ jobs:
           git tag "$VERSION"
           # Atomic: either both the commit and the tag land, or neither does
           git push --atomic origin "HEAD:refs/heads/$DEFAULT_BRANCH" "refs/tags/$VERSION"
-          gh release create "$VERSION" --title "$VERSION" --notes "$MODULE xcframework, binary: $ZIP_URL"
+          # The tag is already published at this point; if only the release object fails, create it by hand
+          gh release create "$VERSION" --title "$VERSION" --notes "$MODULE xcframework, binary: $ZIP_URL" \
+            || { echo "::error::Tag $VERSION was pushed but creating the GitHub release failed. Create the release for tag $VERSION manually; do not re-run this workflow."; exit 1; }

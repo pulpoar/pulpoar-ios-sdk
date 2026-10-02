@@ -48,7 +48,7 @@ One shared version tag covers the whole package; releasing any module bumps it. 
    COPYFILE_DISABLE=1 ditto -c -k --norsrc --noextattr --noqtn --keepParent <Module>.xcframework <Module>.xcframework.zip
    ```
 3. Upload to the `vision` blob container under a **new, never reused** path, ending in `/<Module>.xcframework.zip` (for example `pulpo-module/builds/NativePulpoModule_v<version>/ios/PulpoModule.xcframework.zip`). The CDN caches for 30 days, so overwriting a path serves stale files.
-4. Run the **Release** workflow (Actions → Release → Run workflow) with the module, the new SDK version and the zip URL. It validates the zip (layout, no debug symbols, architectures, minimum iOS), updates that module's `url` and `checksum` in `Package.swift`, checks that SwiftPM resolves it, then commits, tags `<version>` and creates a GitHub release.
+4. Run the **Release** workflow (Actions → Release → Run workflow) with the module, the new SDK version and the zip URL. It validates the zip (layout, no debug symbols, every slice's architectures, minimum iOS no newer than `Package.swift`, an arm64 device slice), updates that module's `url` and `checksum` in `Package.swift`, checks that SwiftPM resolves it, then commits, tags `<version>` and creates a GitHub release.
 
 ### Adding a new module
 Add a library product and `binaryTarget` to `Package.swift`, add the name to the `module` options in `.github/workflows/release.yml`, add a row to the Modules table above, then release it as above.
