@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to tag, e.g. 0.0.25 (no leading v)"
+        required: true
+      zip_url:
+        description: "Public URL of the uploaded PulpoModule.xcframework.zip"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version must look like 1.2.3"; exit 1; }
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "tag $VERSION already exists"; exit 1
+          fi
+
+      - name: Download and validate zip
+        env:
+          ZIP_URL: ${{ inputs.zip_url }}
+        run: |
+          curl -fsSL "$ZIP_URL" -o PulpoModule.xcframework.zip
+          if unzip -l PulpoModule.xcframework.zip | grep -qiE "dSYM|__MACOSX|\.DS_Store"; then
+            echo "zip contains dSYMs or macOS metadata"; exit 1
+          fi
+          unzip -q PulpoModule.xcframework.zip -d unzipped
+          [ -d unzipped/PulpoModule.xcframework ] || { echo "PulpoModule.xcframework must be the zip's top-level entry"; exit 1; }
+          if plutil -p unzipped/PulpoModule.xcframework/Info.plist | grep -q DebugSymbolsPath; then
+            echo "Info.plist still has DebugSymbolsPath"; exit 1
+          fi
+
+      - name: Update Package.swift
+        env:
+          ZIP_URL: ${{ inputs.zip_url }}
+        run: |
+          CHECKSUM=$(swift package compute-checksum PulpoModule.xcframework.zip)
+          sed -i '' -E "s#url: \".*\"#url: \"$ZIP_URL\"#; s#checksum: \".*\"#checksum: \"$CHECKSUM\"#" Package.swift
+          swift package dump-package > /dev/null
+          grep -E "url:|checksum:" Package.swift
+
+      - name: Commit, tag, release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "release: $VERSION"
+          git tag "$VERSION"
+          git push origin HEAD:${{ github.event.repository.default_branch }} "$VERSION"
+          gh release create "$VERSION" --title "$VERSION" --notes "PulpoModule xcframework $VERSION"
