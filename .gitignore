@@ -4,3 +4,5 @@
 *.xcodeproj/xcuserdata/
 PulpoModule.xcframework.zip
 unzipped/
+__pycache__/
+*.xcframework.zip

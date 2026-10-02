@@ -2,6 +2,10 @@
 
 All notable changes to the PulpoAR iOS SDK are listed here. Versions follow semantic versioning.
 
+## Unreleased
+- Package is structured for multiple modules (one product per module); release workflow takes a `module` input and updates only that module's binary.
+- CI runs script tests and resolves every binary on pull requests.
+
 ## 0.0.24
 - First release from this repository.
 - xcframework slimmed to the minimum (no dSYMs); `Info.plist` no longer references removed debug symbols, fixing the Xcode "Missing path … dSYMs" build error from earlier test builds.
