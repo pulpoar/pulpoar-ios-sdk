@@ -5,7 +5,7 @@ Native iOS SDK for PulpoAR (face makeup try-on), distributed with Swift Package 
 ## Requirements
 
 - Xcode 16+
-- iOS 18.4+ deployment target
+- iOS 15.6+ deployment target
 - A physical iPhone for camera use. The xcframework has an `arm64` device slice and an `x86_64` simulator slice only; there is no `arm64` simulator slice yet.
 
 ## Modules
