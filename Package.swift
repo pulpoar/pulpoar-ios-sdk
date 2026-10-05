@@ -11,7 +11,7 @@ import PackageDescription
 // add the name to the `module` options in release.yml, then document it in README.md.
 let package = Package(
     name: "PulpoAR",
-    platforms: [.iOS("18.4")],
+    platforms: [.iOS("15.6")],
     products: [
         .library(name: "PulpoModule", targets: ["PulpoModule"])
     ],
