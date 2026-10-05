@@ -18,8 +18,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "PulpoModule",
-            url: "https://assets.pulpoar.com/vision/pulpo-module/builds/NativePulpoModule_v0.0.24/ios/PulpoModule.xcframework.zip",
-            checksum: "fc31fc6ad3e608d94c68a1add90a4d6e686428d3ad2297c41ffe8b038d743d57"
+            url: "https://assets.pulpoar.com/vision/pulpo-module/builds/NativePulpoModule_v0.0.27/ios/PulpoModule.xcframework.zip",
+            checksum: "05c54fbbb257ec7326c16b58afc79c245ac7d8999ecadb7545d34d8fac2e07df"
         )
     ]
 )
