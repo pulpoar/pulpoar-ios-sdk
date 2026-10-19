@@ -104,9 +104,11 @@ def check(manifest: str, fetch) -> list:
 
 
 def fetch_json(url: str) -> dict:
+    # The CDN rejects urllib's default User-Agent (Python-urllib/x.y) with 403.
+    request = urllib.request.Request(url, headers={"User-Agent": "pulpoar-ios-sdk-scripts"})
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(url, timeout=60) as response:
+            with urllib.request.urlopen(request, timeout=60) as response:
                 return json.load(response)
         except OSError as e:
             if attempt == 2:
