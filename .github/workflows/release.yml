@@ -3,18 +3,15 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      module:
-        description: "Module being released (must match a binaryTarget in Package.swift)"
-        type: choice
-        required: true
-        options:
-          - PulpoModule
       version:
-        description: "SDK version to tag, e.g. 0.0.25 (no leading v). One shared version for the whole package."
+        description: "SDK version to tag, e.g. 0.1.0 (no leading v). One shared version for the whole package."
         required: true
-      zip_url:
-        description: "Public URL of the uploaded <Module>.xcframework.zip"
-        required: true
+      tryon_build_url:
+        description: "Try-On build folder (PulpoTryOnKit + PulpoTryOnUI), as printed by the source repository's iOS Try-On Release workflow, e.g. https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.1.0/"
+        required: false
+      pulpo_module_zip_url:
+        description: "New PulpoModule zip, only when releasing a new engine: https://assets.pulpoar.com/vision/pulpo-module/builds/<folder>/ios/PulpoModule.xcframework.zip"
+        required: false
 
 permissions:
   contents: write
@@ -28,68 +25,67 @@ jobs:
     # Only release from the default branch; otherwise the push below would carry other branches' commits into it.
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: macos-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      TRYON_BUILD_URL: ${{ inputs.tryon_build_url }}
+      PULPO_MODULE_ZIP_URL: ${{ inputs.pulpo_module_zip_url }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Validate version
-        env:
-          MODULE: ${{ inputs.module }}
-          VERSION: ${{ inputs.version }}
-          ZIP_URL: ${{ inputs.zip_url }}
+      - name: Validate inputs
         run: |
-          [[ "$ZIP_URL" == https://assets.pulpoar.com/vision/pulpo-module/builds/*/"$MODULE".xcframework.zip ]] || { echo "zip_url must be under https://assets.pulpoar.com/vision/pulpo-module/builds/ and end in /$MODULE.xcframework.zip"; exit 1; }
-          [[ "$ZIP_URL" =~ ^[A-Za-z0-9._:/-]+$ ]] || { echo "zip_url contains unsupported characters"; exit 1; }
           python3 -m unittest discover -s scripts
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version must look like 1.2.3"; exit 1; }
+          [[ -n "$TRYON_BUILD_URL$PULPO_MODULE_ZIP_URL" ]] || { echo "give a Try-On build URL, a PulpoModule zip URL, or both"; exit 1; }
           if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
             echo "tag $VERSION already exists"; exit 1
           fi
 
-      - name: Download and validate zip
-        env:
-          MODULE: ${{ inputs.module }}
-          ZIP_URL: ${{ inputs.zip_url }}
+      - name: List the binaries to release
         run: |
-          curl -fsSL --retry 3 --max-time 300 "$ZIP_URL" -o "$MODULE".xcframework.zip
-          if unzip -l "$MODULE".xcframework.zip | grep -qiE "dSYM|__MACOSX|\.DS_Store"; then
-            echo "zip contains dSYMs or macOS metadata"; exit 1
+          : > binaries.txt
+          if [[ -n "$PULPO_MODULE_ZIP_URL" ]]; then
+            echo "PulpoModule $PULPO_MODULE_ZIP_URL" >> binaries.txt
           fi
-          unzip -q "$MODULE".xcframework.zip -d unzipped
-          [ -d unzipped/"$MODULE".xcframework ] || { echo "$MODULE.xcframework must be the zip's top-level entry"; exit 1; }
-          python3 scripts/check_xcframework.py unzipped/"$MODULE".xcframework "$MODULE"
+          if [[ -n "$TRYON_BUILD_URL" ]]; then
+            # Reads build-info.json from the folder: it must be a build of $VERSION; gives each zip's checksum.
+            python3 scripts/build_info.py plan "$TRYON_BUILD_URL" "$VERSION" >> binaries.txt
+          fi
+          cat binaries.txt
 
-      - name: Update Package.swift
-        env:
-          MODULE: ${{ inputs.module }}
-          ZIP_URL: ${{ inputs.zip_url }}
+      - name: Download, validate and update Package.swift
         run: |
-          CHECKSUM=$(swift package compute-checksum "$MODULE".xcframework.zip)
-          python3 scripts/update_manifest.py "$MODULE" "$ZIP_URL" "$CHECKSUM"
+          while read -r module url checksum <&3; do
+            scripts/stage_binary.sh "$module" "$url" "$checksum"
+          done 3< binaries.txt
           swift package dump-package > /dev/null
           git diff Package.swift
 
+      - name: Check the binaries fit together
+        # Kit and UI from the same build, and the PulpoModule they were built against
+        run: python3 scripts/build_info.py check
+
       - name: Verify package resolves
         run: |
-          # Downloads the binary from the URL and checks it against the checksum, exactly as a partner's SwiftPM would
+          # Downloads every binary from its URL and checks it against the checksum, exactly as a partner's SwiftPM would
           rm -rf .build
           swift package resolve
           swift package describe > /dev/null
 
       - name: Commit, tag, release
         env:
-          MODULE: ${{ inputs.module }}
-          VERSION: ${{ inputs.version }}
-          ZIP_URL: ${{ inputs.zip_url }}
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          modules=$(cut -d' ' -f1 binaries.txt | paste -sd ',' - | sed 's/,/, /g')
+          notes=$(awk '{ print "- `" $1 "`: " $2 }' binaries.txt)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Package.swift may already match (e.g. first release); tag the current commit then
-          git diff --quiet Package.swift || git commit -m "release: $VERSION ($MODULE)" Package.swift
+          # Package.swift may already match (e.g. a module's first release, added by pull request); tag the current commit then
+          git diff --quiet Package.swift || git commit -m "release: $VERSION ($modules)" Package.swift
           git tag "$VERSION"
           # Atomic: either both the commit and the tag land, or neither does
           git push --atomic origin "HEAD:refs/heads/$DEFAULT_BRANCH" "refs/tags/$VERSION"
           # The tag is already published at this point; if only the release object fails, create it by hand
-          gh release create "$VERSION" --title "$VERSION" --notes "$MODULE xcframework, binary: $ZIP_URL" \
+          gh release create "$VERSION" --title "$VERSION" --notes "$(printf 'Binaries released in this version:\n%s\n\nSee CHANGELOG.md.' "$notes")" \
             || { echo "::error::Tag $VERSION was pushed but creating the GitHub release failed. Create the release for tag $VERSION manually; do not re-run this workflow."; exit 1; }

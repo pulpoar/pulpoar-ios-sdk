@@ -40,20 +40,23 @@ Xcode: File → Packages → Update to Latest Package Versions (or `swift packag
 
 ## Releasing (maintainers)
 
-One shared version tag covers the whole package; releasing any module bumps it. Run once per module.
+One shared version tag covers the whole package. Binaries are uploaded to the `vision` blob container (served at `https://assets.pulpoar.com/vision/`) under a **new, never reused** path: the CDN caches for 30 days, so overwriting a path serves stale files. Then the **Release** workflow (Actions → Release → Run workflow) makes them installable. For each binary it validates the zip (layout, no debug symbols, every slice's architectures, minimum iOS no newer than `Package.swift`, an arm64 device slice, a valid signature if signed), updates its `url` and `checksum` in `Package.swift`, checks that SwiftPM resolves the package, then commits, tags `<version>` and creates a GitHub release.
 
-1. Build the module's xcframework and remove debug symbols: no `dSYMs/` folders, and no `DebugSymbolsPath` keys in `<Module>.xcframework/Info.plist` (Xcode fails the build if they point at missing folders).
-2. Zip it so `<Module>.xcframework` is the top-level entry, without macOS metadata:
+**Try-On SDK (`PulpoTryOnKit`, `PulpoTryOnUI`):** built and uploaded by the *iOS Try-On Release* workflow of the private source repository, to `https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/<version>/`, together with a `build-info.json`. Run Release with that version and that folder as the Try-On build URL; the source workflow's summary prints the command. Release requires the build to be for that version, the downloaded zips to match `build-info.json`, and the `PulpoModule` in `Package.swift` to be the one the Kit was built against (`scripts/build_info.py`). A new engine therefore reaches partners with a Kit rebuilt against it.
+
+**Engine (`PulpoModule`):**
+1. Build the xcframework and remove debug symbols: no `dSYMs/` folders, and no `DebugSymbolsPath` keys in `PulpoModule.xcframework/Info.plist` (Xcode fails the build if they point at missing folders).
+2. Zip it so `PulpoModule.xcframework` is the top-level entry, without macOS metadata:
    ```
-   COPYFILE_DISABLE=1 ditto -c -k --norsrc --noextattr --noqtn --keepParent <Module>.xcframework <Module>.xcframework.zip
+   COPYFILE_DISABLE=1 ditto -c -k --norsrc --noextattr --noqtn --keepParent PulpoModule.xcframework PulpoModule.xcframework.zip
    ```
-3. Upload to the `vision` blob container under a **new, never reused** path, ending in `/<Module>.xcframework.zip` (for example `pulpo-module/builds/NativePulpoModule_v<version>/ios/PulpoModule.xcframework.zip`). The CDN caches for 30 days, so overwriting a path serves stale files.
-4. Run the **Release** workflow (Actions → Release → Run workflow) with the module, the new SDK version and the zip URL. It validates the zip (layout, no debug symbols, every slice's architectures, minimum iOS no newer than `Package.swift`, an arm64 device slice), updates that module's `url` and `checksum` in `Package.swift`, checks that SwiftPM resolves it, then commits, tags `<version>` and creates a GitHub release.
+3. Upload it to a new folder, for example `pulpo-module/builds/NativePulpoModule_v<version>/ios/PulpoModule.xcframework.zip`.
+4. Run Release with the new SDK version and the zip URL as the PulpoModule zip URL.
 
 ### Adding a new module
-Add a library product and `binaryTarget` to `Package.swift`, add the name to the `module` options in `.github/workflows/release.yml`, add a row to the Modules table above, then release it as above.
+Add a `binaryTarget` and a library product to `Package.swift` (the product lists every binary the module needs at runtime), add a row to the Modules table above, then release it as above. A module built from source with a `build-info.json` needs a release input like the Try-On one in `.github/workflows/release.yml`.
 
-CI (`.github/workflows/ci.yml`) runs the script tests and resolves every binary on each PR.
+CI (`.github/workflows/ci.yml`) runs the script tests, resolves every binary and checks that binaries built from source fit together, on each PR.
 
 ## License
 
