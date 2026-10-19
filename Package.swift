@@ -7,8 +7,9 @@ import PackageDescription
 // `url` and `checksum` are rewritten by .github/workflows/release.yml (scripts/update_manifest.py),
 // so keep each binaryTarget as `name`, `url`, `checksum` on separate lines. Partners never edit this file.
 //
-// Adding a module: add a library product and a binaryTarget here (url/checksum of its first zip),
-// add the name to the `module` options in release.yml, then document it in README.md.
+// Adding a module: add a binaryTarget here (url/checksum of its first zip) and a library product listing every
+// binaryTarget it needs at runtime (a binaryTarget can't declare dependencies of its own), then document it in
+// README.md and, if it needs a new kind of release input, in release.yml.
 let package = Package(
     name: "PulpoAR",
     platforms: [.iOS("15.6")],

@@ -8,6 +8,7 @@ Checks, driven by the xcframework's own Info.plist (no hard-coded slice names):
 - an iOS device slice with arm64 exists
 - every slice has the module's framework binary, containing exactly the declared architectures
 - every slice's minimum OS is not newer than the iOS version declared in Package.swift
+- if the xcframework is signed, the signature verifies (files unchanged since signing)
 """
 import plistlib
 import re
@@ -76,6 +77,11 @@ def main() -> int:
         errors.append("no slices listed in Info.plist")
     elif not device_arm64:
         errors.append("no iOS device arm64 slice")
+
+    if (root / "_CodeSignature").is_dir():
+        verify = subprocess.run(["codesign", "--verify", "--strict", str(root)], capture_output=True, text=True)
+        if verify.returncode != 0:
+            errors.append(f"signature does not verify: {verify.stderr.strip()}")
 
     for e in errors:
         print(f"error: {e}", file=sys.stderr)

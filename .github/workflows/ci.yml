@@ -23,3 +23,7 @@ jobs:
           swift package dump-package > /dev/null
           swift package resolve
           swift package describe > /dev/null
+
+      - name: Binaries built from source fit together
+        # Kit and UI from the same build, and the PulpoModule they were built against (scripts/build_info.py)
+        run: python3 scripts/build_info.py check

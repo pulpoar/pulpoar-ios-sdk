@@ -8,7 +8,8 @@ Fails (without writing) unless exactly one `.binaryTarget(name: "<Module>", ...)
 import re
 import sys
 
-URL_PREFIX = "https://assets.pulpoar.com/vision/pulpo-module/builds/"
+# Every binary is served from the `vision` container behind assets.pulpoar.com.
+URL_PREFIX = "https://assets.pulpoar.com/vision/"
 
 
 def update(source: str, module: str, url: str, checksum: str) -> str:
