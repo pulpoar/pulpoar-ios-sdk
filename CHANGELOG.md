@@ -2,6 +2,9 @@
 
 All notable changes to the PulpoAR iOS SDK are listed here. Versions follow semantic versioning.
 
+## 0.2.1
+- `PulpoModule`, `PulpoTryOnKit` and `PulpoTryOnUI` rebuilt with Xcode 26. No API changes.
+
 ## 0.2.0
 - `PulpoModule` updated: adds the nail polish try-on API, plus stability and performance improvements.
 - `PulpoTryOnKit` and `PulpoTryOnUI` 0.2.0, built against the new `PulpoModule`. No API changes.
