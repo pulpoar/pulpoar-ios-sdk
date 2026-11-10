@@ -21,18 +21,18 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "PulpoModule",
-            url: "https://assets.pulpoar.com/vision/pulpo-module/builds/NativePulpoModule_v0.0.28/ios/PulpoModule.xcframework.zip",
-            checksum: "05c54fbbb257ec7326c16b58afc79c245ac7d8999ecadb7545d34d8fac2e07df"
+            url: "https://assets.pulpoar.com/vision/pulpo-module/builds/NativePulpoModule_v0.0.29/ios/PulpoModule.xcframework.zip",
+            checksum: "537cc247b34cd283072b45d73c5f493a5f3482db3151d54bade6b38566a72904"
         ),
         .binaryTarget(
             name: "PulpoTryOnKit",
-            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.1.0/PulpoTryOnKit.xcframework.zip",
-            checksum: "206a0de812633efe8ce83acf726b0a2b6b88bfc413804f464d1a90277536205d"
+            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.2.0/PulpoTryOnKit.xcframework.zip",
+            checksum: "053f160326ffe211b0027d2b25bb2a1605e99f8b0419c836aa6b95108b32713a"
         ),
         .binaryTarget(
             name: "PulpoTryOnUI",
-            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.1.0/PulpoTryOnUI.xcframework.zip",
-            checksum: "bdce76f0b4aa7b56be805ca67e28e9e6de72a7ef5f1770681a923e6f76d942db"
+            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.2.0/PulpoTryOnUI.xcframework.zip",
+            checksum: "dd9176e6ad18c287ff471e22d4f268aaf587bb1294c05ce3c363455fc6ed759c"
         )
     ]
 )
