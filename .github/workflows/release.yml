@@ -12,6 +12,12 @@ on:
       pulpo_module_zip_url:
         description: "New PulpoModule zip URL on the PulpoAR CDN, only when releasing a new engine"
         required: false
+      skinai_build_url:
+        description: "SkinAI build folder URL (PulpoSkinAIKit), as printed by the source repository's iOS SkinAI Release workflow"
+        required: false
+      pulpo_skinai_zip_url:
+        description: "New PulpoSkinAI zip URL on the PulpoAR CDN, only when releasing a new SkinAI engine"
+        required: false
 
 permissions:
   contents: write
@@ -29,6 +35,8 @@ jobs:
       VERSION: ${{ inputs.version }}
       TRYON_BUILD_URL: ${{ inputs.tryon_build_url }}
       PULPO_MODULE_ZIP_URL: ${{ inputs.pulpo_module_zip_url }}
+      SKINAI_BUILD_URL: ${{ inputs.skinai_build_url }}
+      PULPO_SKINAI_ZIP_URL: ${{ inputs.pulpo_skinai_zip_url }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -36,7 +44,7 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version must look like 1.2.3"; exit 1; }
-          [[ -n "$TRYON_BUILD_URL$PULPO_MODULE_ZIP_URL" ]] || { echo "give a Try-On build URL, a PulpoModule zip URL, or both"; exit 1; }
+          [[ -n "$TRYON_BUILD_URL$PULPO_MODULE_ZIP_URL$SKINAI_BUILD_URL$PULPO_SKINAI_ZIP_URL" ]] || { echo "give at least one build folder or engine zip URL"; exit 1; }
           if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
             echo "tag $VERSION already exists"; exit 1
           fi
@@ -47,10 +55,13 @@ jobs:
           if [[ -n "$PULPO_MODULE_ZIP_URL" ]]; then
             echo "PulpoModule $PULPO_MODULE_ZIP_URL" >> binaries.txt
           fi
-          if [[ -n "$TRYON_BUILD_URL" ]]; then
-            # Reads build-info.json from the folder: it must be a build of $VERSION; gives each zip's checksum.
-            python3 scripts/build_info.py plan "$TRYON_BUILD_URL" "$VERSION" >> binaries.txt
+          if [[ -n "$PULPO_SKINAI_ZIP_URL" ]]; then
+            echo "PulpoSkinAI $PULPO_SKINAI_ZIP_URL" >> binaries.txt
           fi
+          # Reads build-info.json from each folder: it must be a build of $VERSION; gives each zip's checksum.
+          for build in "$TRYON_BUILD_URL" "$SKINAI_BUILD_URL"; do
+            [[ -z "$build" ]] || python3 scripts/build_info.py plan "$build" "$VERSION" >> binaries.txt
+          done
           cat binaries.txt
 
       - name: Download, validate and update Package.swift
@@ -62,7 +73,7 @@ jobs:
           git diff Package.swift
 
       - name: Check the binaries fit together
-        # Kit and UI from the same build, and the PulpoModule they were built against
+        # Modules of one build together, and the engine each build was built against
         run: python3 scripts/build_info.py check
 
       - name: Verify package resolves
