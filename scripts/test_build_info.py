@@ -114,6 +114,19 @@ class Check(unittest.TestCase):
         self.assertEqual(len(problems), 1)
         self.assertIn("PulpoSkinAIKit", problems[0])
 
+    def test_two_products_each_on_its_own_engine(self):
+        skinai_base = BUILD_PREFIX + "ios/skinai/0.1.0/"
+        skinai_engine = ("PulpoSkinAI", "https://assets.pulpoar.com/vision/pulpo-skinai/builds/x/ios/PulpoSkinAI.xcframework.zip", CS_OTHER)
+        skinai_kit = ("PulpoSkinAIKit", skinai_base + "PulpoSkinAIKit.xcframework.zip", CS_KIT)
+        skinai = {"schema": 1, "version": "0.1.0",
+                  "modules": {"PulpoSkinAIKit": {"file": "PulpoSkinAIKit.xcframework.zip", "checksum": CS_KIT}},
+                  "engine": {"module": "PulpoSkinAI", "checksum": CS_OTHER}}
+        builds = {BASE + "build-info.json": info(), skinai_base + "build-info.json": skinai}
+        self.assertEqual(self.run_check([ENGINE, KIT, UI, skinai_engine, skinai_kit], builds), [])
+        problems = self.run_check([ENGINE, KIT, UI, skinai_engine[:2] + (CS_ENGINE,), skinai_kit], builds)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("was built against PulpoSkinAI", problems[0])
+
     def test_duplicate_target(self):
         with self.assertRaises(ValueError):
             targets(manifest(KIT, KIT))

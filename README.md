@@ -42,7 +42,7 @@ Xcode: File → Packages → Update to Latest Package Versions (or `swift packag
 
 ## Releasing (maintainers)
 
-Binaries are hosted on the PulpoAR CDN (`assets.pulpoar.com`), each release under a new path. The **Release** workflow (Actions → Release → Run workflow) takes the version and the new binaries (a Try-On build folder and/or a PulpoModule zip), validates them, updates `Package.swift`, and tags and publishes the release. CI runs the same checks on every pull request.
+Binaries are hosted on the PulpoAR CDN (`assets.pulpoar.com`), each release under a new path. The **Release** workflow (Actions → Release → Run workflow) takes the version and the new binaries (a Try-On or SkinAI build folder, a PulpoModule or PulpoSkinAI zip, in any combination), validates them, updates `Package.swift`, and tags and publishes the release. CI runs the same checks on every pull request.
 
 To add a module, add its `binaryTarget` and library product to `Package.swift` and a row to the Modules table above.
 
