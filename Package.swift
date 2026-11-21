@@ -16,7 +16,8 @@ let package = Package(
     products: [
         .library(name: "PulpoModule", targets: ["PulpoModule"]),
         .library(name: "PulpoTryOnKit", targets: ["PulpoTryOnKit", "PulpoModule"]),
-        .library(name: "PulpoTryOnUI", targets: ["PulpoTryOnUI", "PulpoTryOnKit", "PulpoModule"])
+        .library(name: "PulpoTryOnUI", targets: ["PulpoTryOnUI", "PulpoTryOnKit", "PulpoModule"]),
+        .library(name: "PulpoSkinAIKit", targets: ["PulpoSkinAIKit", "PulpoSkinAI"])
     ],
     targets: [
         .binaryTarget(
@@ -33,6 +34,16 @@ let package = Package(
             name: "PulpoTryOnUI",
             url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.2.2/PulpoTryOnUI.xcframework.zip",
             checksum: "b4d912a49fd32992bf6c338345dbeef78782176a1a334ac4eae6fd033e94ed79"
+        ),
+        .binaryTarget(
+            name: "PulpoSkinAI",
+            url: "https://assets.pulpoar.com/vision/pulpo-skinai/builds/NativePulpoSkinAI_v0.1.0/ios/PulpoSkinAI.xcframework.zip",
+            checksum: "e8a31e3487323a58f92e0b44c66a239339279cdcbab7eafdeef8722c72e4c229"
+        ),
+        .binaryTarget(
+            name: "PulpoSkinAIKit",
+            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/skinai/0.3.0/PulpoSkinAIKit.xcframework.zip",
+            checksum: "0850d3b095a37dd6acd473312bbaf0ec36d25f6b9c24dbf03d5f1deb8bb7de06"
         )
     ]
 )
