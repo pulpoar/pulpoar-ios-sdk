@@ -4,7 +4,7 @@ All notable changes to the PulpoAR iOS SDK are listed here. Versions follow sema
 
 ## 0.3.0
 - New product `PulpoSkinAIKit` 0.3.0: on-device skin analysis of a photo (`PulpoSkinAnalyzer().analyze(photo)`), with the skin health score, 12 issue scores, acne count, masks and visuals. Needs Xcode 26+. Links its own engine, `PulpoSkinAI` 0.1.0, which can sit next to `PulpoModule` in one app.
-- Try-On products unchanged.
+- `PulpoModule` 0.0.32: the makeup engine of PulpoAR web 1.5.20. Faster foundation and makeup blending; metallic and shimmer eyeshadow; an eyelid-following eyeliner placement, off unless a product config turns it on. `PulpoTryOnKit` and `PulpoTryOnUI` 0.3.0 rebuilt against it. No API changes.
 
 ## 0.2.1
 - `PulpoModule`, `PulpoTryOnKit` and `PulpoTryOnUI` rebuilt with Xcode 26. No API changes.
