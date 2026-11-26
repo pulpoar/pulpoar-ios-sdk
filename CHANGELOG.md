@@ -2,6 +2,18 @@
 
 All notable changes to the PulpoAR iOS SDK are listed here. Versions follow semantic versioning.
 
+## 0.4.0
+`PulpoTryOnKit` and `PulpoTryOnUI` 0.4.0, built against the same `PulpoModule` 0.0.32. **Breaking** for apps that call the Kit's `track*` methods; apps that only use `PulpoTryOnUI` need no changes.
+- **Try-on events, as the web plugin sends them:** new `PulpoTryOnEvent` (one case per web event, with the same data and the web's event name in `key`, such as `onAddToCart`). `PulpoTryOnSession.tryOnEvents` (an `AsyncStream`) delivers every event to the app, whatever the analytics consent: the Kit's own (`ready`, `error`, `usePhoto`, `variantSelect`, `appliedVariantsChange`, `tryOn`) and those a UI tracks. Start iterating before `loadCatalog()` or `start` to get `ready`.
+- **PulpoTryOnUI:** `PulpoTryOnUIConfiguration.onEvent` receives every event on the main thread, for the app's own analytics. The live camera has a mirror button, as on the web.
+- **PulpoTryOnKit:** `PulpoCameraView` and `PulpoCameraUIView` gain `isMirrored` (default `true`: the front camera shows as a mirror). Display only; photos and snapshots are never flipped.
+- **Removed (breaking):** `PulpoUIEvent` and the `track*` methods. Migrate with `track(_:)`:
+  - `trackUIEvent(.x)` → `track(.x)` (the case names are kept)
+  - `trackAddToCart(variants)` → `track(.addToCart(variants))`; likewise `trackGoToProduct`, `trackExperienceSelect`, `trackLookSelect`, `trackBrandSelect`, `trackCategorySelect` and `trackProductSelect`
+  - The events the Kit sends itself are ignored by `track(_:)`, with a warning, so they aren't counted twice.
+- **Analytics, matching the web's reports:** `onReady` carries `entryType: "embedded"`; hiding and showing the try-on no longer counts the restored shades and photo as new choices; a project preloaded while another runs keeps its own visit.
+- **Install:** pick "Up to Next Minor Version" (below 1.0, a minor version can change the API).
+
 ## 0.3.0
 - New product `PulpoSkinAIKit` 0.3.0: on-device skin analysis of a photo (`PulpoSkinAnalyzer().analyze(photo)`), with the skin health score, 12 issue scores, acne count, masks and visuals. Needs Xcode 26+. Links its own engine, `PulpoSkinAI` 0.1.0, which can sit next to `PulpoModule` in one app.
 - `PulpoModule` 0.0.32: the makeup engine of PulpoAR web 1.5.20. Faster foundation and makeup blending; metallic and shimmer eyeshadow; an eyelid-following eyeliner placement, off unless a product config turns it on. `PulpoTryOnKit` and `PulpoTryOnUI` 0.3.0 rebuilt against it. No API changes.

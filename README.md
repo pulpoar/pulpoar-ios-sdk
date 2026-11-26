@@ -21,12 +21,12 @@ Add `PulpoTryOnUI` for the full try-on experience, `PulpoTryOnKit` to build your
 
 ## Install
 
-**Xcode:** File → Add Package Dependencies… → enter this repository's URL → pick a version rule (for example "Up to Next Major" from `0.1.0`) → add the product(s) you need (see Modules) to your app target.
+**Xcode:** File → Add Package Dependencies… → enter this repository's URL → pick the version rule "Up to Next Minor Version" from `0.4.0` (below 1.0, a minor version can change the API) → add the product(s) you need (see Modules) to your app target.
 
 **Package.swift:**
 ```swift
 dependencies: [
-    .package(url: "https://github.com/pulpoar/pulpoar-ios-sdk", from: "0.1.0")
+    .package(url: "https://github.com/pulpoar/pulpoar-ios-sdk", .upToNextMinor(from: "0.4.0"))
 ],
 targets: [
     .target(name: "YourApp", dependencies: [
