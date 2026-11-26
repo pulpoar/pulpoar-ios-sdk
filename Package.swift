@@ -27,13 +27,13 @@ let package = Package(
         ),
         .binaryTarget(
             name: "PulpoTryOnKit",
-            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.3.0/PulpoTryOnKit.xcframework.zip",
-            checksum: "278c465095f778bcc3a2d93c357ff1f059412af2d321389e2b3231bf2ed0a18f"
+            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.4.0/PulpoTryOnKit.xcframework.zip",
+            checksum: "7a900a360bc75436a65538ef8f5119bb1c193d0c47dd7465d385ea8254e47f4b"
         ),
         .binaryTarget(
             name: "PulpoTryOnUI",
-            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.3.0/PulpoTryOnUI.xcframework.zip",
-            checksum: "ce622dca1f40525a4a958642aa0b8265b2b0db3e5bb6dd355d3f535c9a55de2b"
+            url: "https://assets.pulpoar.com/vision/pulpo-sdk/ios/tryon/0.4.0/PulpoTryOnUI.xcframework.zip",
+            checksum: "60cd47708cc36d7c29fb2eb09fa5daeec931f887271d5e3609376480d00898e7"
         ),
         .binaryTarget(
             name: "PulpoSkinAI",
