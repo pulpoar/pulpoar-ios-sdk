@@ -4,9 +4,9 @@ Native iOS SDK for PulpoAR (face makeup try-on and skin analysis), distributed w
 
 ## Requirements
 
-- Xcode 26+ for `PulpoTryOnKit`, `PulpoTryOnUI` and `PulpoSkinAIKit` (built with Swift 6.3); Xcode 16+ for `PulpoModule` alone
+- Xcode 26+ for `PulpoTryOnKit`, `PulpoTryOnUI`, `PulpoSkinAIKit` and `PulpoSkinAIUI` (built with Swift 6.3); Xcode 16+ for `PulpoModule` alone
 - iOS 15.6+ deployment target
-- A physical iPhone for camera use. The Try-On xcframeworks have an `arm64` device slice and an `x86_64` simulator slice only; `PulpoSkinAIKit` also has an `arm64` simulator slice.
+- A physical iPhone for camera use. The Try-On xcframeworks have an `arm64` device slice and an `x86_64` simulator slice only; `PulpoSkinAIKit` and `PulpoSkinAIUI` also have an `arm64` simulator slice.
 
 ## Modules
 
@@ -15,9 +15,10 @@ Native iOS SDK for PulpoAR (face makeup try-on and skin analysis), distributed w
 | `PulpoTryOnUI` | `import PulpoTryOnUI` | Ready-made try-on screens (camera, catalog, looks), themeable. Includes `PulpoTryOnKit` |
 | `PulpoTryOnKit` | `import PulpoTryOnKit` | Try-On SDK without UI: session, camera view, catalog and product application, for your own screens |
 | `PulpoModule` | `import PulpoModule` | Face makeup engine used by the Try-On SDK. Linked automatically by the products above; add it on its own only for an existing direct integration |
+| `PulpoSkinAIUI` | `import PulpoSkinAIUI` | Ready-made skin analysis (questionnaire, guided selfie, result with the skin health score and Studio's recommended products), themed by Studio. Includes `PulpoSkinAIKit` |
 | `PulpoSkinAIKit` | `import PulpoSkinAIKit` | On-device skin analysis of a photo: skin health score, 12 issue scores (0 to 10), masks and visuals. Downloads its models on first use. Links its engine, `PulpoSkinAI` |
 
-Add `PulpoTryOnUI` for the full try-on experience, `PulpoTryOnKit` to build your own try-on UI, or `PulpoSkinAIKit` for skin analysis. You only download and link the ones you add to your target.
+Add `PulpoTryOnUI` for the full try-on experience, `PulpoTryOnKit` to build your own try-on UI, `PulpoSkinAIUI` for the full skin analysis experience, or `PulpoSkinAIKit` to build your own skin analysis UI. You only download and link the ones you add to your target.
 
 ## Install
 
