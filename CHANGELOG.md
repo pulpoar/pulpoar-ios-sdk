@@ -2,6 +2,12 @@
 
 All notable changes to the PulpoAR iOS SDK are listed here. Versions follow semantic versioning.
 
+## 0.5.0
+SkinAI: new product `PulpoSkinAIUI` 0.5.0, and `PulpoSkinAIKit` 0.5.0, both linking engine `PulpoSkinAI` 0.2.0. Try-On is unchanged from 0.4.0 (same binaries). **Breaking** only for apps that `switch` over `PulpoSkinError` exhaustively: it has two new cases.
+- **New `PulpoSkinAIUI`:** PulpoAR's ready-made skin analysis. It shows the opening screen, the project's questionnaire, a guided selfie with live face checks, on-device analysis, and the result: the skin health score, each concern drawn on the photo, and the products and routines Studio recommends. Everything is styled with the project's Studio theme. Use `PulpoSkinAIView(projectKey:configuration:)` in SwiftUI or `PulpoSkinAIViewController` in UIKit. `PulpoSkinAIUIConfiguration` takes the analytics consent (required), the language and the product tap, close, error and event (`PulpoSkinAIEvent`) callbacks. Add `NSCameraUsageDescription`; photos are analyzed on the device and never uploaded.
+- **`PulpoSkinAIKit`:** `PulpoSkinAIProject.load(projectKey:)` loads a Studio project's questions, concerns and theme, and `recommendations(for:answers:)` returns its products and routines for an analysis. `PulpoSkinAnalyzer.checkFace(_:)` runs the live camera's face checks (`PulpoFaceCheck`), and `liveVisual(_:issue:)` draws one issue on a live frame.
+- **`PulpoSkinError`:** new cases `projectNotFound` and `unsupportedSdk` (the project needs a newer SDK).
+
 ## 0.4.0
 `PulpoTryOnKit` and `PulpoTryOnUI` 0.4.0, built against the same `PulpoModule` 0.0.32. **Breaking** for apps that call the Kit's `track*` methods; apps that only use `PulpoTryOnUI` need no changes.
 - **Try-on events, as the web plugin sends them:** new `PulpoTryOnEvent` (one case per web event, with the same data and the web's event name in `key`, such as `onAddToCart`). `PulpoTryOnSession.tryOnEvents` (an `AsyncStream`) delivers every event to the app, whatever the analytics consent: the Kit's own (`ready`, `error`, `usePhoto`, `variantSelect`, `appliedVariantsChange`, `tryOn`) and those a UI tracks. Start iterating before `loadCatalog()` or `start` to get `ready`.
