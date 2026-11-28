@@ -22,21 +22,30 @@ Add `PulpoTryOnUI` for the full try-on experience, `PulpoTryOnKit` to build your
 
 ## Install
 
-**Xcode:** File → Add Package Dependencies… → enter this repository's URL → pick the version rule "Up to Next Minor Version" from `0.4.0` (below 1.0, a minor version can change the API) → add the product(s) you need (see Modules) to your app target.
+**Xcode:** File → Add Package Dependencies… → enter this repository's URL → pick the version rule "Up to Next Minor Version" from `0.5.0` (below 1.0, a minor version can change the API) → add the product(s) you need (see Modules) to your app target.
 
 **Package.swift:**
 ```swift
 dependencies: [
-    .package(url: "https://github.com/pulpoar/pulpoar-ios-sdk", .upToNextMinor(from: "0.4.0"))
+    .package(url: "https://github.com/pulpoar/pulpoar-ios-sdk", .upToNextMinor(from: "0.5.0"))
 ],
 targets: [
     .target(name: "YourApp", dependencies: [
-        .product(name: "PulpoTryOnUI", package: "pulpoar-ios-sdk")  // or "PulpoTryOnKit"
+        .product(name: "PulpoTryOnUI", package: "pulpoar-ios-sdk")  // or "PulpoTryOnKit", "PulpoSkinAIUI", "PulpoSkinAIKit"
     ])
 ]
 ```
 
-Then `import PulpoTryOnUI` (or `import PulpoTryOnKit`). Add `NSCameraUsageDescription` to your app's Info.plist if you use the camera.
+Then import the product you added (`import PulpoTryOnUI`, `import PulpoSkinAIUI`, …). Add `NSCameraUsageDescription` to your app's Info.plist if you use the camera.
+
+**Skin analysis, ready-made:**
+```swift
+import PulpoSkinAIUI
+
+PulpoSkinAIView(projectKey: "my-project",
+                configuration: .init(analyticsConsent: .granted, onClose: { isSkinAIPresented = false }))
+```
+UIKit: present `PulpoSkinAIViewController(projectKey:configuration:)` full screen. Photos are analyzed on the device and never uploaded.
 
 ## Update
 
